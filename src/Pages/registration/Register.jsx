@@ -1,0 +1,196 @@
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useForm } from 'react-hook-form';
+import { FcGoogle } from 'react-icons/fc';
+import { Link, useNavigate } from 'react-router-dom';
+import UseAuth from '../../Hooks/UseAuth/UseAuth';
+import toast from 'react-hot-toast';
+import UseAxiosPublic from '../../Hooks/AxiosPublic/AxiosPublic';
+import { updateProfile } from 'firebase/auth';
+
+
+const imgApi = 'ce236a8722302720fe457ff8a0c0107b';
+const imgHoistingApi = `https://api.imgbb.com/1/upload?key=${imgApi}`;
+
+const Register = () => {
+    const navigate = useNavigate()
+
+    const { createUser, signInWithGoogle } = UseAuth();
+    const axiosPublic = UseAxiosPublic();
+
+    const handleSubmit = async (e) => {
+
+        e.preventDefault();
+        const form = e.target;
+        const name = form.name.value;
+        const email = form.email.value;
+        const password = form.password.value;
+        const image = {
+            image: form.image.files[0]
+        };
+        const res = await axiosPublic.post(imgHoistingApi, image, {
+            headers: {
+                'content-type': 'multipart/form-data'
+            }
+        });
+        //console.log(res.data);
+
+        const data = {
+            name,
+            email,
+            image: res?.data?.data?.display_url,
+        }
+
+        //  console.log(data);
+
+        axiosPublic.post('/users', data)
+            .then(res => {
+                //    console.log(res);
+            })
+
+
+        await createUser(email, password)
+            .then(res => {
+                console.log(res);
+                updateProfile(res.user, {
+                    displayName: data.name,
+                    photoURL: data.image
+                })
+                    .then(reply => {
+                        //  console.log(reply);
+                        toast.success('Sign-up successful');
+                        return navigate('/');
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    })
+            })
+
+
+    }
+
+
+    return (
+        <>
+
+            <div>
+                <Helmet>
+                    <title>MERNventory | Register</title>
+                </Helmet>
+            </div>
+
+
+            <div className='flex justify-center items-center min-h-screen'>
+                <div className='flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-100 text-gray-900'>
+                    <div className='mb-8 text-center'>
+                        <h1 className='my-3 text-4xl font-bold'>Sign Up</h1>
+                        <p className='text-sm text-gray-400'>Welcome to MERNventory</p>
+                    </div>
+                    <form
+                        onSubmit={handleSubmit}
+
+                        className='space-y-6  '
+                    >
+                        <div className='space-y-4'>
+                            <div>
+                                <label htmlFor='email' className='block mb-2 text-sm'>
+                                    Name
+                                </label>
+                                <input
+                                    type='text'
+                                    name='name'
+                                    id='name'
+                                    placeholder='Enter Your Name Here'
+                                    className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-rose-500 bg-gray-200 text-gray-900'
+
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor='image' className='block mb-2 text-sm'>
+                                    Select Image:
+                                </label>
+                                <input
+                                    required
+                                    type='file'
+                                    id='image'
+                                    name='image'
+                                    accept='image/*'
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor='email' className='block mb-2 text-sm'>
+                                    Email address
+                                </label>
+                                <input
+                                    type='email'
+                                    name='email'
+                                    id='email'
+                                    required
+                                    placeholder='Enter Your Email Here'
+                                    className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-rose-500 bg-gray-200 text-gray-900'
+
+                                />
+                            </div>
+                            <div>
+                                <div className='flex justify-between'>
+                                    <label htmlFor='password' className='text-sm mb-2'>
+                                        Password
+                                    </label>
+                                </div>
+                                <input
+                                    type='password'
+                                    name='password'
+
+                                    id='password'
+                                    required
+                                    placeholder='*******'
+                                    className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-rose-500 bg-gray-200 text-gray-900'
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <button
+                                type='submit'
+                                className='bg-rose-500 w-full rounded-md py-3 text-white'
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </form>
+                    <div className='flex items-center pt-4 space-x-1'>
+                        <div className='flex-1 h-px sm:w-16 dark:bg-gray-700'></div>
+                        <p className='px-3 text-sm dark:text-gray-400'>
+                            SignUp with social accounts
+                        </p>
+                        <div className='flex-1 h-px sm:w-16 dark:bg-gray-700'></div>
+                    </div>
+                    <button
+                        onClick={signInWithGoogle}
+                        className="border-white-500 group m-auto mb-4 mt-5 inline-flex h-12 w-[320px] items-center justify-center space-x-2 rounded-3xl border px-4 py-2 transition-colors duration-300 hover:border-blue-500 hover:bg-blue-500 focus:outline-none hover:text-white"
+                    >
+                        <span>
+                            <img className="h-5 cursor-pointer" src="https://i.imgur.com/arC60SB.png" alt="" />
+                        </span>
+                        <span className=" text-black ">
+                            Sign in with Google
+                        </span>
+                    </button>
+                    <p className='px-6 text-sm text-center text-gray-400'>
+                        Do not have any account?{' '}
+                        <Link
+                            to='/logIn'
+                            className='hover:underline hover:text-rose-500 text-gray-600'
+                        >
+                            Login.
+                        </Link>
+
+                    </p>
+                </div>
+            </div>
+        </>
+
+    );
+};
+
+export default Register;
