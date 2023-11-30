@@ -1,45 +1,38 @@
 import { Link } from "react-router-dom";
-import Title from "../Components/Container/Title/Title";
-import useAuth from "../Hooks/UseAuth/UseAuth";
-import useProducts from "../Hooks/useProducts";
+import Title from "../../Components/Container/Title/Title";
+import useAuth from "../../Hooks/UseAuth/UseAuth";
+import useProducts from "../../Hooks/useProducts";
+import UseAxiosPublic from "../../Hooks/AxiosPublic/AxiosPublic";
 import toast from "react-hot-toast";
-import { useQueryClient } from "@tanstack/react-query";
-import UseAxiosPublic from "../Hooks/AxiosPublic/AxiosPublic";
 
-const AllProducts = () => {
+const ProductSales = () => {
   const { user } = useAuth();
-  const axios = UseAxiosPublic();
   const products = useProducts(user?.email);
-  const queryClient = useQueryClient();
-  // console.log(products);
+  const axiosPublic = UseAxiosPublic();
 
-  const handleDelete = (id) => {
-    axios
-      .delete(`/products?id=${id}`)
+  const handleAddToCart = (productId) => {
+    axiosPublic
+      .post("/cart", { productId: productId, userEmail: user?.email })
       .then((res) => {
-        toast.success(res?.data?.message);
-        queryClient.invalidateQueries(["getProducts"]);
+        toast(res?.data?.message);
       })
       .catch((error) => {
         toast.error(error?.message);
       });
   };
 
-//   console.log(products)
-
   return (
     <section>
       <div
-        className={`${
-          products?.length === 0 ? "flex-col" : "flex-row"
-        } flex justify-between flex-wrap items-center gap-3`}
+        className={`flex-row flex justify-between flex-wrap items-center gap-3`}
       >
-        <Title>Manage Products ({products?.length})</Title>
-        {products?.length === 0 && (
-          <p className="mt-12 block text-center">No products added</p>
-        )}
-        <Link to="/dashboard/add-products" className="btn btn-accent">
-          Add product
+        <Title>All Products ({products?.length})</Title>
+        <Link
+          to="/checkout"
+          className="btn bg-green-500 text-slate-800 disabled:bg-slate-200"
+          disabled={products?.length === 0}
+        >
+          Checkout
         </Link>
       </div>
       <div className="overflow-x-auto">
@@ -54,18 +47,23 @@ const AllProducts = () => {
             {/* head */}
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Image</th>
                 <th>Name</th>
                 <th>Quantity</th>
                 <th>Discount</th>
                 <th>Selling Price</th>
-                <th>Sales</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {products?.map((product) => (
                 <tr key={product?._id}>
+                  <td>
+                    <div className="w-[100px] overflow-x-auto">
+                      {product?._id}
+                    </div>
+                  </td>
                   <td>
                     <img
                       src={product?.image}
@@ -81,20 +79,13 @@ const AllProducts = () => {
                     {product?.selling -
                       product?.selling * (product?.discount / 100)}
                   </td>
-                  <td>{product?.sales}</td>
                   <td>
                     <div className="flex flex-col gap-2">
-                      <Link
-                        to={`/dashboard/edit-product/${product?._id}`}
-                        className="btn bg-blue-500 text-white"
-                      >
-                        Update
-                      </Link>
                       <button
-                        onClick={() => handleDelete(product?._id)}
-                        className="btn bg-red-500 text-white"
+                        onClick={() => handleAddToCart(product?._id)}
+                        className="btn bg-amber-500 text-white"
                       >
-                        Delete
+                        Add to cart
                       </button>
                     </div>
                   </td>
@@ -107,4 +98,4 @@ const AllProducts = () => {
     </section>
   );
 };
-export default AllProducts;
+export default ProductSales;
